@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rifl:rifl xmlns:rifl="http://www.rifl-lang.org/rifl"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <!-- Define Sources, Sinks, and Categories -->
+  <interface>
+    <sources>
+      <!-- Example:
+      <source id="src_location">
+        <source-code>
+          <class name="android.location.LocationManager"/>
+          <method name="getLastKnownLocation"/>
+        </source-code>
+      </source>
+      -->
+    </sources>
+
+    <sinks>
+      <!-- Example:
+      <sink id="sink_network">
+        <source-code>
+          <class name="java.net.HttpURLConnection"/>
+          <method name="getOutputStream"/>
+        </source-code>
+      </sink>
+      -->
+    </sinks>
+
+    <categories>
+      <!-- Define optional source/sink groupings here -->
+    </categories>
+  </interface>
+
+  <!-- Define Security Domains (e.g., High, Low) -->
+  <domains>
+    <!-- Example:
+    <domain name="High"/>
+    <domain name="Low"/>
+    -->
+  </domains>
+
+  <!-- Define Permitted Information Flow Policies -->
+  <flowrelation>
+    <!-- Example:
+    <flow from="Low" to="High"/>
+    -->
+  </flowrelation>
+
+  <!-- Map Sources and Sinks to Domains -->
+  <assign>
+    <!-- Example:
+    <assign-source id="src_location" domain="High"/>
+    <assign-sink id="sink_network" domain="Low"/>
+    -->
+  </assign>
+
+</rifl:rifl>

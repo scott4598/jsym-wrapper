@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<riflspec>
+    <interfacespec>
+        <assignable handle="high_source">
+            <category name="highSources">
+                <source>
+                    <returnvalue
+                        class="LSecureFlowFixture"
+                        method="readSecret()Ljava/lang/String;" />
+                </source>
+            </category>
+        </assignable>
+
+        <assignable handle="low_sink">
+            <category name="lowSinks">
+                <sink>
+                    <parameter
+                        class="LSecureFlowFixture"
+                        method="publish(Ljava/lang/String;)V"
+                        parameter="1" />
+                </sink>
+            </category>
+        </assignable>
+    </interfacespec>
+
+    <domains>
+        <domain name="high" />
+        <domain name="low" />
+    </domains>
+
+    <flowrelation>
+        <flow from="low" to="high" />
+    </flowrelation>
+
+    <domainassignment>
+        <assign handle="high_source" domain="high" />
+        <assign handle="low_sink" domain="low" />
+    </domainassignment>
+</riflspec>
