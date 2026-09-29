@@ -152,7 +152,7 @@ public final class JSymWrapper {
                 arguments,
                 actualOutputDirectory
         );
-        
+
         prepareLegacySyrsCompatibilityLink(
                 actualOutputDirectory
         );
@@ -254,16 +254,52 @@ public final class JSymWrapper {
          * Full analysis has no previous version to compare.
          * Symmaries still expects the file to exist, but the normal
          * all.meth_files input already supplies every current method.
+         * New Symmaries requires the files it will process to be in affected.meth_files
+         * Baseline run therefore populates this with all .meths
          */
         if (arguments.previousMethodHashes == null) {
-            Files.write(
-                    affectedMethodsFile,
-                    Collections.<String>emptyList(),
-                    StandardCharsets.UTF_8
-            );
+        List<String> allMethodPaths =new ArrayList<String>();
 
-            return;
+        try (java.util.stream.Stream<Path> files =
+                        Files.list(
+                                outputDirectory.resolve("Meth")
+                        )) {
+
+                files.filter(Files::isRegularFile)
+                        .filter(path ->
+                                path.getFileName()
+                                        .toString()
+                                        .endsWith(".meth")
+                        )
+                        .sorted()
+                        .forEach(path ->
+                                allMethodPaths.add(
+                                        path.toAbsolutePath()
+                                                .normalize()
+                                                .toString()
+                                )
+                        );
         }
+
+        if (allMethodPaths.isEmpty()) {
+                throw new IOException(
+                        "Full analysis produced no .meth files"
+                );
+        }
+
+        Files.write(
+                affectedMethodsFile,
+                allMethodPaths,
+                StandardCharsets.UTF_8
+        );
+
+        System.out.println(
+                "Full analysis affected .meth files: "
+                        + allMethodPaths.size()
+        );
+
+        return;
+}
 
         Map<String, String> previousHashes =
                 readMethodHashes(
