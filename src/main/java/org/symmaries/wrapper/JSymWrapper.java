@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.LinkOption;
 import java.nio.file.StandardCopyOption;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -151,8 +152,8 @@ public final class JSymWrapper {
                 arguments,
                 actualOutputDirectory
         );
-
-        prepareLegacyAffectedMethodsFile(
+        
+        prepareLegacySyrsCompatibilityLink(
                 actualOutputDirectory
         );
 
@@ -196,8 +197,7 @@ public final class JSymWrapper {
                     )
             );
         }
-
-        removeLegacyIncrementalDirectory(
+        removeLegacySyrsCompatibilityLink(
                 actualOutputDirectory
         );
 
@@ -447,94 +447,93 @@ public final class JSymWrapper {
         }
     }
 
-    private static void prepareLegacyAffectedMethodsFile(
-            Path outputDirectory)
-            throws IOException {
+    private static void prepareLegacySyrsCompatibilityLink(
+        Path outputDirectory)
+        throws IOException {
 
-        Path source =
-                outputDirectory.resolve(
-                        "incremental/affected.meth_files"
-                );
+    Path incrementalDirectory =
+            outputDirectory.resolve("incremental");
 
-        if (!Files.isRegularFile(source)) {
+    Files.createDirectories(
+            incrementalDirectory
+    );
+
+    Path affectedMethods =
+            incrementalDirectory.resolve(
+                    "affected.meth_files"
+            );
+
+    if (!Files.isRegularFile(affectedMethods)) {
+        throw new IOException(
+                "Affected-method file is missing: "
+                        + affectedMethods
+        );
+    }
+
+    Path compatibilityPath =
+            outputDirectory.resolve("Syrs");
+
+    if (Files.exists(
+            compatibilityPath,
+            LinkOption.NOFOLLOW_LINKS
+    )) {
+        if (Files.isSymbolicLink(
+                compatibilityPath
+        )) {
+            Files.delete(
+                    compatibilityPath
+            );
+        } else {
             throw new IOException(
-                    "Root incremental affected-method file "
-                            + "is missing: "
-                            + source
+                    "Cannot create Symmaries compatibility "
+                            + "link because the path already "
+                            + "exists and is not a symbolic link: "
+                            + compatibilityPath
             );
         }
+    }
 
-        Path legacyDirectory =
-                outputDirectory.resolve(
-                        "Syrs/incremental"
-                );
+    /*
+     * <output>/Syrs -> .
+     *
+     * This allows the current Symmaries build to resolve
+     * Syrs/Meth and Syrs/incremental while preserving the
+     * root-level output layout.
+     */
+    Files.createSymbolicLink(
+            compatibilityPath,
+            Paths.get(".")
+    );
+}       
 
-        Files.createDirectories(
-                legacyDirectory
-        );
+private static void removeLegacySyrsCompatibilityLink(
+        Path outputDirectory)
+        throws IOException {
 
-        Path legacyAffectedMethods =
-                legacyDirectory.resolve(
-                        "affected.meth_files"
-                );
+    Path compatibilityPath =
+            outputDirectory.resolve("Syrs");
 
-        Files.copy(
-                source,
-                legacyAffectedMethods,
-                StandardCopyOption.REPLACE_EXISTING
+    if (!Files.exists(
+            compatibilityPath,
+            LinkOption.NOFOLLOW_LINKS
+    )) {
+        return;
+    }
+
+    if (!Files.isSymbolicLink(
+            compatibilityPath
+    )) {
+        throw new IOException(
+                "Expected the Symmaries compatibility path "
+                        + "to be a symbolic link: "
+                        + compatibilityPath
         );
     }
 
-    private static void removeLegacyIncrementalDirectory(
-            Path outputDirectory)
-            throws IOException {
-
-        Path legacyAffectedMethods =
-                outputDirectory.resolve(
-                        "Syrs/incremental/affected.meth_files"
-                );
-
-        Files.deleteIfExists(
-                legacyAffectedMethods
-        );
-
-        Path legacyIncrementalDirectory =
-                outputDirectory.resolve(
-                        "Syrs/incremental"
-                );
-
-        deleteDirectoryIfEmpty(
-                legacyIncrementalDirectory
-        );
-
-        Path legacySyrsDirectory =
-                outputDirectory.resolve(
-                        "Syrs"
-                );
-
-        deleteDirectoryIfEmpty(
-                legacySyrsDirectory
-        );
-    }
-
-    private static void deleteDirectoryIfEmpty(
-            Path directory)
-            throws IOException {
-
-        if (!Files.isDirectory(directory)) {
-            return;
-        }
-
-        try (java.util.stream.Stream<Path> entries =
-                     Files.list(directory)) {
-
-            if (entries.findAny().isPresent()) {
-                return;
-            }
-        }
-
-        Files.delete(directory);
-    }
+    Files.delete(
+            compatibilityPath
+    );
+}
 
     private static Path methodFileForIdentifier(
             Path outputDirectory,
