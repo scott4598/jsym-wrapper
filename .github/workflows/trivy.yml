@@ -1,0 +1,29 @@
+name: Security Scan
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  security:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Build
+        run: mvn clean verify
+
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
